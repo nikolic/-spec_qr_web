@@ -2,17 +2,27 @@
 
 require_once __DIR__.'/../vendor/autoload.php';
 
-require_once __DIR__.'/../vendor/phpqrcode/phpqrcode.php';
+require_once __DIR__.'/../vendor/phpqrcode/phpqrcode.php'; 
 
 $app = new Silex\Application();
 
-$images_path = __DIR__."/temp/";
+$app->register(new Silex\Provider\DoctrineServiceProvider(), array(
+    'db.options' => array(
+        'driver'   => 'pdo_mysql',
+        'user' => 'sourceco_api',
+        'password' => 'qwe123',
+        'dbname' => 'sourceco_api',
+        'charset'   => 'utf8',
+    ),
+));
 
-$app->get('/hello', function() {
-    return 'Hello!!!';
+/*** ROUTES ***/
+
+$app->get('/ping', function() use ($app) {
+    return 'Pong !!!';
 });
 
-$app->get('/qrcode', function() {
+$app->get('/generate_qrcode/{id}', function($id) use ($app){
 
 	$PNG_WEB_DIR = 'temp/';
 	$PNG_TEMP_DIR = dirname(__FILE__).DIRECTORY_SEPARATOR.'temp'.DIRECTORY_SEPARATOR;
@@ -20,12 +30,17 @@ $app->get('/qrcode', function() {
 	if (!file_exists($PNG_TEMP_DIR)){
 		 mkdir($PNG_TEMP_DIR, 777);
 	}
-       
-	$filename = $PNG_WEB_DIR.uniqid().".png";
+    $filename = uniqid().".png";
+	$save_path = $PNG_WEB_DIR.$filename;
 
-	QRcode::png('code data text', $filename);
+	QRcode::png($id, $save_path);
 
-    return $filename;
+	$sql = "INSERT INTO `sourceco_api`.`qr_codes` (`id`, `text`, `filename`, `used`, `created`)
+ 			VALUES (NULL, '" . $id . "', '" . $filename . "', '0', CURRENT_TIMESTAMP);";
+
+    $res = $app['db']->query($sql);	
+
+    return $save_path;
 });
 
 $app->get('/nikolic', function() use ($app) {
