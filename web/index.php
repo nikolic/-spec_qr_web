@@ -24,18 +24,36 @@ $app->get('/ping', function() use ($app) {
 });
 
 $app->get('/generate_qrcode/{id}', function($id) use ($app){
+
+    /* Validation start */
+
+    $MAX_LENGTH = 200;
+
+    if( strlen($id) > $MAX_LENGTH ){
+        return $app->json(array('success' => 0, 
+                        'url' => NULL,
+                        'error' => "Text length must be less than ".$MAX_LENGTH." !"
+            ));
+    }
+
     
     $checkQuery = "SELECT COUNT( * ) AS  `exist` FROM " 
                     . "`qr_codes` WHERE  `text` =  ? ";
 
     $result = $app['db']->fetchAssoc($checkQuery, array($id)); 
 
-    if( $result['exist'] > 0){
+    // check text length
+
+    if( $result['exist'] > 0 ){
         return $app->json(array('success' => 0, 
                         'url' => NULL,
                         'error' => "QRcode already exist!"
             ));
     }
+
+
+
+    /* Validation end */
 
     $PNG_WEB_DIR = 'temp/';
     $PNG_TEMP_DIR = dirname(__FILE__).DIRECTORY_SEPARATOR.'temp'.DIRECTORY_SEPARATOR;
