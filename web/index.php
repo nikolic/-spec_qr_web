@@ -36,7 +36,7 @@ $app->get('/generate_qrcode/{id}', function($id) use ($app){
             ));
     }
 
-    
+     /* create code_exist? function */
     $checkQuery = "SELECT COUNT( * ) AS  `exist` FROM " 
                     . "`qr_codes` WHERE  `text` =  ? ";
 
@@ -50,8 +50,7 @@ $app->get('/generate_qrcode/{id}', function($id) use ($app){
                         'error' => "QRcode already exist!"
             ));
     }
-
-
+     /* create code_exist? function */
 
     /* Validation end */
 
@@ -78,13 +77,32 @@ $app->get('/generate_qrcode/{id}', function($id) use ($app){
                 ));
 });
 
-$app->get('/nikolic', function() use ($app) {
 
-	$dd = array('success' => 1, 
-				'level' => "HARD"
-		);
+$app->get('/mark_as_used/{code}', function($code) use ($app) {
 
-    return $app->json($dd);
+    /* create code_exist? function */
+    $checkQuery = "SELECT COUNT( * ) AS  `exist` FROM " 
+                . "`qr_codes` WHERE  `text` =  ? ";
+
+    $result = $app['db']->fetchAssoc($checkQuery, array($code)); 
+
+    // check text length
+
+    if( $result['exist'] == 0 ){
+        return $app->json(array('success' => 0, 
+                        'error' => "QRcode doesn't exist!"
+            ));
+    }
+     /* create code_exist? function */
+
+    // Update used field 
+
+    $updateSql = "UPDATE `sourceco_api`.`qr_codes` SET `used` = '1'"
+                    ." WHERE `qr_codes`.`text` = '".$code."'";
+
+    $updateSuccess = $app['db']->query($updateSql); 
+
+    return $app->json(array('success' => 1, 'text' => $code));
 });
 
 $app->run();
